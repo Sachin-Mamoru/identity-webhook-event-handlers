@@ -18,35 +18,22 @@
 
 package org.wso2.identity.webhook.common.event.handler.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.wso2.carbon.identity.core.ServiceURL;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
-import org.wso2.identity.event.common.publisher.EventPublisherService;
-import org.wso2.identity.event.common.publisher.model.EventContext;
-import org.wso2.identity.event.common.publisher.model.SecurityEventTokenPayload;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
 
 /**
  * Common utility methods for tests.
@@ -135,35 +122,6 @@ public class TestUtils {
         if (mockedStaticIdentityTenantUtil != null) {
             mockedStaticIdentityTenantUtil.close();
         }
-    }
-
-    /**
-     * Reads a sample event schema from a given file path.
-     *
-     * @param resourceFilePath The file path to the resource.
-     * @return Sample event schemas.
-     * @throws IOException    If an error occurs while reading the file.
-     * @throws ParseException If an error occurs while parsing the JSON.
-     */
-    public static JSONObject readEventSchemasFromFile(String resourceFilePath) throws IOException, ParseException {
-
-        JSONParser jsonParser = new JSONParser();
-        return (JSONObject) jsonParser.parse(new InputStreamReader(
-                Files.newInputStream(Paths.get(resourceFilePath)), StandardCharsets.UTF_8));
-    }
-
-    /**
-     * Reads event schemas from a mocked file input.
-     *
-     * @param fakeJsonContent The fake JSON content.
-     * @return A JSONObject parsed from the fake JSON content.
-     * @throws ParseException If an error occurs while parsing the JSON.
-     */
-    public static JSONObject readEventSchemasFromMockedInput(String fakeJsonContent) throws ParseException, IOException {
-
-        JSONParser jsonParser = new JSONParser();
-        InputStream fakeStream = new ByteArrayInputStream(fakeJsonContent.getBytes(StandardCharsets.UTF_8));
-        return (JSONObject) jsonParser.parse(new InputStreamReader(fakeStream, StandardCharsets.UTF_8));
     }
 
     /**
