@@ -31,14 +31,17 @@ import org.wso2.identity.event.common.publisher.EventPublisherService;
 import org.wso2.identity.event.common.publisher.model.EventContext;
 import org.wso2.identity.event.common.publisher.model.SecurityEventTokenPayload;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
@@ -54,6 +57,7 @@ public class TestUtils {
     private static final int SAMPLE_TENANT_ID = 100;
     private static MockedStatic<ServiceURLBuilder> mockedStaticServiceURLBuilder;
     private static MockedStatic<IdentityTenantUtil> mockedStaticIdentityTenantUtil;
+    private static MockedStatic<Files> mockedFiles;
 
     /**
      * Mocks the ServiceURLBuilder.
@@ -109,17 +113,18 @@ public class TestUtils {
      */
     public static void closeMockedServiceURLBuilder() {
 
-        mockedStaticServiceURLBuilder.close();
-
+        if (mockedStaticServiceURLBuilder != null) {
+            mockedStaticServiceURLBuilder.close();
+        }
     }
 
     /**
      * Mocks the IdentityTenantUtil.
      */
     public static void mockIdentityTenantUtil() {
+
         mockedStaticIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
         when(IdentityTenantUtil.getTenantId(SAMPLE_TENANT_DOMAIN)).thenReturn(SAMPLE_TENANT_ID);
-
     }
 
     /**
@@ -127,54 +132,60 @@ public class TestUtils {
      */
     public static void closeMockedIdentityTenantUtil() {
 
-        mockedStaticIdentityTenantUtil.close();
-
+        if (mockedStaticIdentityTenantUtil != null) {
+            mockedStaticIdentityTenantUtil.close();
+        }
     }
 
     /**
-     * Reads the sample event schemas from the resources.
+     * Reads a sample event schema from a given file path.
      *
+     * @param resourceFilePath The file path to the resource.
      * @return Sample event schemas.
      * @throws IOException    If an error occurs while reading the file.
      * @throws ParseException If an error occurs while parsing the JSON.
      */
-    public static JSONObject getEventSchemas() throws IOException, ParseException {
+    public static JSONObject readEventSchemasFromFile(String resourceFilePath) throws IOException, ParseException {
 
-        String resourceFilePath = new File("src/test/resources/sample-event-configs.json").getAbsolutePath();
         JSONParser jsonParser = new JSONParser();
         return (JSONObject) jsonParser.parse(new InputStreamReader(
                 Files.newInputStream(Paths.get(resourceFilePath)), StandardCharsets.UTF_8));
     }
 
     /**
-     * Asserts the events getting published.
+     * Reads event schemas from a mocked file input.
      *
-     * @param mockedWebSubHubAdapterService Mocked WebSubHubAdapterService.
-     * @param expectedEventPayload          Expected event payload.
-     * @param eventSchemaUri                Event schema URI.
-     * @throws IOException If an error occurs while converting the payload to JSON.
+     * @param fakeJsonContent The fake JSON content.
+     * @return A JSONObject parsed from the fake JSON content.
+     * @throws ParseException If an error occurs while parsing the JSON.
      */
-    public static void assertEventsGettingPublished(EventPublisherService mockedWebSubHubAdapterService,
-                                                    SecurityEventTokenPayload expectedEventPayload,
-                                                    EventContext eventSchemaUri)
-            throws IOException {
+    public static JSONObject readEventSchemasFromMockedInput(String fakeJsonContent) throws ParseException, IOException {
 
-        ObjectMapper mapper = new ObjectMapper();
-        String expectedJSONString = mapper.writeValueAsString(expectedEventPayload);
-        org.json.JSONObject expectedJSONObject = new org.json.JSONObject(expectedJSONString);
+        JSONParser jsonParser = new JSONParser();
+        InputStream fakeStream = new ByteArrayInputStream(fakeJsonContent.getBytes(StandardCharsets.UTF_8));
+        return (JSONObject) jsonParser.parse(new InputStreamReader(fakeStream, StandardCharsets.UTF_8));
+    }
 
-        ArgumentCaptor<EventContext> eventUriArgumentCaptor = ArgumentCaptor.forClass(EventContext.class);
-        ArgumentCaptor<SecurityEventTokenPayload> eventPayloadArgumentCaptor =
-                ArgumentCaptor.forClass(SecurityEventTokenPayload.class);
+    /**
+     * Sets up a mocked Files.newInputStream with the provided fake content.
+     *
+     * @param fakeJsonContent The fake JSON content.
+     */
+    public static void mockFilesNewInputStream(String fakeJsonContent) {
 
-        verify(mockedWebSubHubAdapterService).publish(eventPayloadArgumentCaptor.capture(),
-                eventUriArgumentCaptor.capture());
+        InputStream fakeStream = new ByteArrayInputStream(fakeJsonContent.getBytes(StandardCharsets.UTF_8));
+        mockedFiles = mockStatic(Files.class);
+        mockedFiles.when(() -> Files.newInputStream(any(Path.class))).thenReturn(fakeStream);
+    }
 
-        ObjectMapper responseMapper = new ObjectMapper();
-        String responseJSONString = responseMapper.writeValueAsString(eventPayloadArgumentCaptor.getValue());
-        org.json.JSONObject responseJSONObject = new org.json.JSONObject(responseJSONString);
+    /**
+     * Closes the mocked Files.
+     */
+    public static void closeMockedFiles() {
 
-        assertEquals(responseJSONObject.toString(), expectedJSONObject.toString());
-        assertEquals(eventUriArgumentCaptor.getValue(), eventSchemaUri);
+        mockedFiles.reset();
+        if (mockedFiles != null) {
+            mockedFiles.close();
+        }
     }
 }
