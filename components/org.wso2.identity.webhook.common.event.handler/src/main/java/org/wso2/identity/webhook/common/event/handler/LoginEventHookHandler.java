@@ -54,13 +54,19 @@ import static org.wso2.identity.webhook.common.event.handler.constant.Constants.
  */
 public class LoginEventHookHandler extends AbstractEventHandler {
 
-    private static final Log log = LogFactory.getLog(LoginEventHookHandler.class);
+    private final Log log;
     private final EventHookHandlerUtils eventHookHandlerUtils;
     private final EventConfigManager eventConfigManager;
 
     public LoginEventHookHandler(EventHookHandlerUtils eventHookHandlerUtils,  EventConfigManager eventConfigManager) {
+        this(eventHookHandlerUtils, eventConfigManager, LogFactory.getLog(LoginEventHookHandler.class));
+    }
+
+    public LoginEventHookHandler(EventHookHandlerUtils eventHookHandlerUtils, EventConfigManager eventConfigManager,
+                                 Log log) {
         this.eventHookHandlerUtils = eventHookHandlerUtils;
         this.eventConfigManager = eventConfigManager;
+        this.log = log;
     }
 
     @Override
@@ -146,7 +152,7 @@ public class LoginEventHookHandler extends AbstractEventHandler {
             Resources publisherConfigResource = EventHookHandlerDataHolder.getInstance().getConfigurationManager()
                     .getTenantResources(tenantDomain, condition);
             return eventConfigManager.extractEventPublisherConfig(publisherConfigResource, eventName);
-        } catch (ConfigurationManagementException | IdentityEventException e) {
+        } catch (ConfigurationManagementException e) {
             throw new IdentityEventException("Error while retrieving event publisher configuration for tenant.", e);
         }
     }
